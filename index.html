@@ -1,41 +1,141 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Socket.IO chat</title>
+    <title>Eye Sho</title>
     <style>
-      body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-
-      #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem; position: fixed; bottom: 0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-      #input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
-      #input:focus { outline: none; }
-      #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
-
-      #messages { list-style-type: none; margin: 0; padding: 0; }
-      #messages > li { padding: 0.5rem 1rem; }
-      #messages > li:nth-child(odd) { background: #efefef; }
     </style>
   </head>
   <body>
-    <ul id="messages"></ul>
-    <form id="form" action="">
-      <input id="input" autocomplete="off" /><button>Send</button>
-    </form>
+    <canvas id="canvas" width="1200" height="1200"></canvas>
+    <img src="http://localhost:25565/img/Pieces.jpg" alt="Pieces">
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
 
-      const form = document.getElementById('form');
-      const input = document.getElementById('input');
-
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        if (input.value) {
-          socket.emit('chat message', input.value);
-          input.value = '';
-        }
+      socket.on('gameState', (newState) => {
+        view.setBoard(newState.board);
+        view.render(newState.pieces);
       });
+
+      //images
+      const pieces = new Image();
+      pieces.src = 'http://localhost:25565/img/Pieces.jpg';
+
+
+      //VIEW
+
+      class View {
+        constructor(){
+          this.canvas = document.getElementById('canvas');
+          this.ctx = this.canvas.getContext('2d');
+
+
+          this.boardCenter = {x: 600, y: 600};
+          this.boardDrawRadius = 400;
+          this.boardDrawMargin = 0;
+        }
+
+        setBoard (board){
+          this.board = board;
+          this.degreesPerRadial = 360/this.board.radialCount;
+          this.distBetweenCircles = (this.boardDrawRadius-this.boardDrawMargin) / this.board.circleCount;
+        }
+
+        render(pieces){
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+          this.renderBoard(this.board);
+          this.renderPieces(pieces);
+        }
+
+        renderBoard(){
+          this.renderBoardNodes();
+          this.renderBoardLines();
+        }
+
+        renderBoardNodes(){
+          this.board.nodes.forEach(node => {
+            this.ctx.strokeStyle = 'white';
+            this.drawCircleByCR(node.c, node.r, 10);
+          });
+        }
+
+        renderBoardLines(){
+          this.board.radialConnections.forEach(connection => {
+            let start = this.CRToXY(connection[0].c, connection[0].r);
+            let end = this.CRToXY(connection[1].c, connection[1].r);
+
+            this.ctx.beginPath();
+            this.ctx.moveTo(start.x, start.y);
+            this.ctx.lineTo(end.x, end.y);
+            this.ctx.stroke();
+          });
+
+          this.board.circleConnections.forEach(connection => {
+            let radius = this.CToDistFromCenter(connection[0].c);
+
+            let angle1 = this.RToAngle(connection[0].r);
+            let angle2 = this.RToAngle(connection[1].r);
+
+            this.ctx.beginPath();
+            this.ctx.arc(this.boardCenter.x, this.boardCenter.y, radius, angle1, angle2);
+            this.ctx.stroke();
+          });
+        }
+
+        renderPieces(pieces){
+          return;
+
+          
+
+          pieces.forEach(piece => {
+
+          });
+        }
+
+
+
+        drawCircleByCR(c, r, radius){
+          this.drawCircle(this.CRToXY(c, r), radius);
+          
+        }
+
+        drawCircle(center, radius){
+          this.ctx.beginPath();
+          this.ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
+          this.ctx.stroke();
+        }
+
+
+
+        calcOffset(startingPos, angle, length){
+          return {
+            x: startingPos.x + length * Math.cos(angle * Math.PI / 180),
+            y: startingPos.y + length * Math.sin(angle * Math.PI / 180)
+          }
+        }
+
+        CToDistFromCenter(c){
+          return this.distBetweenCircles * c;
+        }
+
+        RToAngle(r){
+          return (this.degreesPerRadial * r)-90;
+        }
+
+        CRToXY(c, r){
+          let distFromCenter = this.CToDistFromCenter(c);
+          let angle = this.RToAngle(r)
+
+          return {
+            x: this.boardCenter.x + distFromCenter * Math.cos(angle * Math.PI / 180),
+            y: this.boardCenter.y + distFromCenter * Math.sin(angle * Math.PI / 180)
+          }
+        }
+      }
+
+      const view = new View();
+
     </script>
   </body>
 </html>
