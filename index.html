@@ -7,21 +7,52 @@
   </head>
   <body>
     <canvas id="canvas" width="1200" height="1200"></canvas>
-    <img src="http://localhost:25565/img/Pieces.jpg" alt="Pieces">
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
       const socket = io();
 
-      socket.on('gameState', (newState) => {
-        view.setBoard(newState.board);
-        view.render(newState.pieces);
+      let imagesAllLoaded = false;
+
+      let data = {};
+
+      socket.on('initialInfo', (initalInfo) => {
+        console.log('initial info recieved');
+        data.pieces = initalInfo.pieceData;
+
+        gameState.board = initalInfo.board;
+      });
+
+      socket.on('pieceList', (pieces) => {
+        gameState.pieces = pieces;
+
+        view.render();
       });
 
       //images
-      const pieces = new Image();
-      pieces.src = 'http://localhost:25565/img/Pieces.jpg';
+      let piecesImg = new Image();
+      piecesImg.src = 'http://localhost:25565/img/Pieces.png';
 
+      //make sure all images are loaded
+      piecesImg.onload = () => {
+        imagesAllLoaded = true;
+        
+        view.render();
+      }
+
+      class GameState {
+        constructor() {
+          this.setup = data.setup;
+          this.board = data.board;
+          this.pieces = [];
+        }
+      }
+
+      //SIM
+      class Sim {
+        constructor(){
+        }
+      }
 
       //VIEW
 
@@ -34,34 +65,48 @@
           this.boardCenter = {x: 600, y: 600};
           this.boardDrawRadius = 400;
           this.boardDrawMargin = 0;
+
+
+          this.pieceResolution = 500;
+
+          this.pieceDrawSize = this.boardDrawRadius / 5;
         }
 
-        setBoard (board){
-          this.board = board;
-          this.degreesPerRadial = 360/this.board.radialCount;
-          this.distBetweenCircles = (this.boardDrawRadius-this.boardDrawMargin) / this.board.circleCount;
-        }
+        render(){
+          if(!imagesAllLoaded){
+            return;
+          }
 
-        render(pieces){
           this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-          this.renderBoard(this.board);
-          this.renderPieces(pieces);
+
+          if(gameState.board){
+            this.renderBoard(gameState.board);
+          }
+
+          if(gameState.pieces.length > 0){
+            this.renderPieces(gameState.pieces);
+          }
         }
 
         renderBoard(){
+          if(!this.degreesPerRadial){
+            this.degreesPerRadial = 360/gameState.board.radialCount;
+            this.distBetweenCircles = (this.boardDrawRadius-this.boardDrawMargin) / gameState.board.circleCount;
+          }
+
           this.renderBoardNodes();
           this.renderBoardLines();
         }
 
         renderBoardNodes(){
-          this.board.nodes.forEach(node => {
+          gameState.board.nodes.forEach(node => {
             this.ctx.strokeStyle = 'white';
             this.drawCircleByCR(node.c, node.r, 10);
           });
         }
 
         renderBoardLines(){
-          this.board.radialConnections.forEach(connection => {
+          gameState.board.radialConnections.forEach(connection => {
             let start = this.CRToXY(connection[0].c, connection[0].r);
             let end = this.CRToXY(connection[1].c, connection[1].r);
 
@@ -71,7 +116,7 @@
             this.ctx.stroke();
           });
 
-          this.board.circleConnections.forEach(connection => {
+          gameState.board.circleConnections.forEach(connection => {
             let radius = this.CToDistFromCenter(connection[0].c);
 
             let angle1 = this.RToAngle(connection[0].r);
@@ -84,13 +129,24 @@
         }
 
         renderPieces(pieces){
-          return;
-
-          
 
           pieces.forEach(piece => {
-
+            if(piece.onBoard !== false){
+              let pos = this.CRToXY(piece.c, piece.r);
+              this.drawPiece(piece.player, piece.type, pos);
+            }
           });
+
+        }
+
+        drawPiece(player, type, pos){
+          let drawX = pos.x - this.pieceDrawSize/2;
+          let drawY = pos.y - this.pieceDrawSize/2;
+
+          let sourceX = data.pieces[type].numInTilesheet * this.pieceResolution;
+          let sourceY = (1-player) * this.pieceResolution;
+          
+          this.ctx.drawImage(piecesImg, sourceX, sourceY, this.pieceResolution, this.pieceResolution, drawX, drawY, this.pieceDrawSize, this.pieceDrawSize);
         }
 
 
@@ -135,6 +191,7 @@
       }
 
       const view = new View();
+      const gameState = new GameState();
 
     </script>
   </body>

@@ -1,14 +1,22 @@
-[
-    {
-        "name": "rye",
+{
+    "ship": {
+        "numInTilesheet": 0,
+        "move": [2, 2]
+    },
+    "rye": {
+        "numInTilesheet": 1,
         "move": [1, 1]
     },
-    {
-        "name": "ash",
+    "ash": {
+        "numInTilesheet": 2,
         "move": [2, 1]
     },
-    {
-        "name": "lotus",
+    "rose": {
+        "numInTilesheet": 3,
+        "move": null
+    },
+    "lotus": {
+        "numInTilesheet": 4,
         "move": [1, 2]
     }
-]
+}
