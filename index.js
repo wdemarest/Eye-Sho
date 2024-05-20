@@ -1,17 +1,18 @@
 //cd Code/"Eye Sho"
 //nodemon
-const path = require('path');
-const express = require('express');
-const { createServer } = require('node:http');
-const { join } = require('node:path');
-const { Server } = require('socket.io');
-const fs = require('fs');
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import express from 'express';
+import { createServer } from 'http';
+import { join } from 'path';
+import { Server } from 'socket.io';
+import fs from 'fs';
+
+import { Sim, GameState } from './public/shared.js';
 
 const app = express();
 const server = createServer(app);
 const io = new Server(server);
-
-
 
 app.use(express.static('public'));
 
@@ -23,10 +24,10 @@ let gameState;
 function Main() {
   sim = new Sim();
   InitData();
-  
 
   roomNum = 0;
-  gameState = new GameState();
+  gameState = new GameState(data.board, data.setup);
+  sim.gameState = gameState;
 }
 
 function InitData(){
@@ -36,7 +37,8 @@ function InitData(){
   data.setup = JSON.parse(fs.readFileSync("defaultSetup.json"));
 }
 
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 app.get('/', (req, res) => {
   res.sendFile(join(__dirname, 'index.html'));
 });
@@ -54,7 +56,7 @@ io.on('connection', (socket) => {
 
 
   socket.on('move', (moveMade) => {
-    sendInitialInfo (roomNum);
+    tryMove(moveMade.pieceNum, moveMade.nodeNum);
   });
 });
 
@@ -62,6 +64,7 @@ function sendInitialInfo (roomNum) {
   let initialInfo = {
     pieceData: data.pieces,
     board: data.board,
+    setup: data.setup,
     playerNum: 0
   };
 
@@ -74,34 +77,19 @@ function sendPieceList (roomNum) {
 }
 
 
+function tryMove(pieceNum, nodeNum){
+  console.log('try move piece', pieceNum, nodeNum);
+  if(sim.checkMove(pieceNum, nodeNum)){
+
+    sim.makeMove(pieceNum, nodeNum);
+    
+    io.to(roomNum+'').emit('move', {pieceNum: pieceNum, nodeNum: nodeNum});
+  }
+}
+
+
 server.listen(25565, () => {
   console.log('server running at http://localhost:25565');
 });
-
-
-class Sim {
-
-}
-
-class GameState {
-  constructor() {
-    this.setup = data.setup;
-    this.board = data.board;
-
-    this.initPieceList()
-  }
-
-  initPieceList() {
-    this.pieces = this.setup;
-
-    for (let i = 0; i < this.pieces.length; i++) {
-      let piece = this.pieces[i];
-      if(piece.onBoard !== false) {
-        piece.onBoard = true;
-      }
-      piece.dead = false;
-    }
-  }
-}
 
 Main();

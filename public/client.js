@@ -1,3 +1,5 @@
+import { Sim, GameState } from './shared.js';
+
 const socket = io();
 
 let data = {};
@@ -9,6 +11,9 @@ socket.on('initialInfo', (initalInfo) => {
   console.log('initial info recieved');
   data.pieces = initalInfo.pieceData;
 
+  gameState = new GameState(initalInfo.board, initalInfo.setup);
+  sim.gameState = gameState;
+
   gameState.board = initalInfo.board;
 
   myPlayerNum = initalInfo.playerNum;
@@ -18,6 +23,10 @@ socket.on('pieceList', (pieces) => {
   gameState.pieces = pieces;
 
   view.render();
+});
+
+socket.on('move', (moveMade) => {
+  tryMove(moveMade.pieceNum, moveMade.nodeNum);
 });
 
 //images
@@ -31,22 +40,16 @@ piecesImg.onload = () => {
   view.render();
 }
 
-class GameState {
-  constructor() {
-    this.setup = data.setup;
-    this.board = data.board;
-    this.pieces = [];
-  }
-}
 
+function tryMove(pieceNum, nodeNum){
+  console.log('try move piece', pieceNum, nodeNum);
+  if(sim.checkMove(pieceNum, nodeNum)){
 
-//SIM
-class Sim {
-  constructor(){
-  }
+    sim.makeMove(pieceNum, nodeNum);
+    
+    socket.emit('move', {pieceNum: pieceNum, nodeNum: nodeNum});
 
-  tryMovePiece(pieceNum, nodeNum){
-    console.log('try move piece', pieceNum, nodeNum);
+    view.render();
   }
 }
 
@@ -71,7 +74,7 @@ class View {
   }
 
   render(){
-    if(!imagesAllLoaded){
+    if(!imagesAllLoaded || !gameState){
       return;
     }
 
@@ -263,6 +266,8 @@ class Control{
         let node = gameState.board.nodes[nodeNum];
 
         if(piece.c == node.c && piece.r == node.r && piece.player == myPlayerNum){
+          console.log('clicked piece', piece.c, piece.r);
+          console.log(sim.findPossibleMoves(i));
 
           if(view.pieceViewStates[i].selected){
             this.deselectAllPieces();
@@ -279,7 +284,7 @@ class Control{
       }
 
       if(this.selectedPiece !== null){
-        sim.tryMovePiece(this.selectedPiece, nodeNum);
+        tryMove(this.selectedPiece, nodeNum)
       }
     }
 
@@ -316,4 +321,4 @@ class Control{
 const sim = new Sim();
 const view = new View();
 const control = new Control();
-const gameState = new GameState();
+let gameState;

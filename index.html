@@ -3,12 +3,19 @@
   <head>
     <title>Eye Sho</title>
     <style>
+      body {
+         background-color: rgb(18, 18, 18);
+      }
     </style>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script type="module" src="client.js"></script>
+
+
   </head>
   <body>
     <canvas id="canvas" width="1200" height="1200"></canvas>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
   </body>
 </html>
