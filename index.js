@@ -61,7 +61,8 @@ io.on('connection', (socket) => {
 function sendInitialInfo (roomNum) {
   let initialInfo = {
     pieceData: data.pieces,
-    board: data.board
+    board: data.board,
+    playerNum: 0
   };
 
   io.to(roomNum+'').emit('initialInfo', initialInfo);

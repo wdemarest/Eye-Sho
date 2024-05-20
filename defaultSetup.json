@@ -10,5 +10,23 @@
         "player": 0,
         "c": 1,
         "r": 8
+    },
+    {
+        "type": "ship",
+        "player": 0,
+        "c": 2,
+        "r": 8
+    },
+    {
+        "type": "ash",
+        "player": 0,
+        "c": 2,
+        "r": 9
+    },
+    {
+        "type": "ship",
+        "player": 0,
+        "c": 1,
+        "r": 10
     }
 ]
