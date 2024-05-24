@@ -6,6 +6,33 @@
         "r": 16
     },
     {
+        "type": "ship",
+        "player": 1,
+        "c": 2,
+        "r": 16
+    },
+    {
+        "type": "ash",
+        "player": 1,
+        "c": 2,
+        "r": 2
+    },
+    {
+        "type": "rose",
+        "player": 1,
+        "c": 3,
+        "r": 15
+    },
+    {
+        "type": "ship",
+        "player": 1,
+        "c": 3,
+        "r": 16
+    },
+
+
+
+    {
         "type": "rye",
         "player": 0,
         "c": 1,
@@ -21,12 +48,18 @@
         "type": "ash",
         "player": 0,
         "c": 2,
-        "r": 9
+        "r": 10
+    },
+    {
+        "type": "rose",
+        "player": 0,
+        "c": 3,
+        "r": 7
     },
     {
         "type": "ship",
         "player": 0,
-        "c": 1,
-        "r": 10
+        "c": 3,
+        "r": 8
     }
 ]

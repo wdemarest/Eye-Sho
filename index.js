@@ -28,6 +28,7 @@ function Main() {
   roomNum = 0;
   gameState = new GameState(data.board, data.setup);
   sim.gameState = gameState;
+  sim.data = data;
 }
 
 function InitData(){

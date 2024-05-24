@@ -1,4 +1,4 @@
-import { Sim, GameState } from './shared.js';
+import { GameState, Sim, Util } from './shared.js';
 
 const socket = io();
 
@@ -13,6 +13,9 @@ socket.on('initialInfo', (initalInfo) => {
 
   gameState = new GameState(initalInfo.board, initalInfo.setup);
   sim.gameState = gameState;
+  sim.data = data;
+  //DEBUGGING
+  sim.view = view;
 
   gameState.board = initalInfo.board;
 
@@ -105,7 +108,7 @@ class View {
 
   renderBoardNodes(){
     this.nodeViewStates.forEach(node => {
-      this.ctx.strokeStyle = (node.hover) ? 'cyan' : 'white';
+      this.ctx.strokeStyle = (node.validMove) ? 'red' : 'white';
       this.ctx.lineWidth = (node.hover) ? 3 : 1;
       let nodeDrawSize = 20;
 
@@ -172,6 +175,28 @@ class View {
     }
   }
 
+  selectPiece(pieceNum){
+    for(let i = 0; i < view.pieceViewStates.length; i++){
+      this.pieceViewStates[i].selected = false;
+    }
+
+    if(pieceNum !== null){
+      this.pieceViewStates[pieceNum].selected = true;
+
+      //valid moves
+      let validMoves = sim.findValidMoves(pieceNum);
+      for(let i = 0; i < this.nodeViewStates.length; i++){
+        this.nodeViewStates[i].validMove = util.arrayIncludesNode(validMoves, gameState.board.nodes[i]);
+      }
+    }else{
+
+      for(let i = 0; i < this.nodeViewStates.length; i++){
+        this.nodeViewStates[i].validMove = false;
+      }
+      
+    }
+    
+  }
 
   /*
   drawCircleByCR(c, r, radius){
@@ -206,9 +231,6 @@ class View {
     let distFromCenter = this.CToDistFromCenter(c);
     let angle = this.RToAngle(r)
 
-    
-
-
     return {
       x: this.boardCenter.x + distFromCenter * Math.cos(angle * Math.PI / 180),
       y: this.boardCenter.y + distFromCenter * Math.sin(angle * Math.PI / 180)
@@ -222,7 +244,8 @@ class View {
       this.nodeViewStates.push({
         x: coords.x,
         y: coords.y,
-        hover: false
+        hover: false,
+        validMove: false
       });
     }
   }
@@ -267,16 +290,15 @@ class Control{
 
         if(piece.c == node.c && piece.r == node.r && piece.player == myPlayerNum){
           console.log('clicked piece', piece.c, piece.r);
-          console.log(sim.findPossibleMoves(i));
-
+          
           if(view.pieceViewStates[i].selected){
-            this.deselectAllPieces();
+            this.selectPiece(null);
           } else {
             for(let j = 0; j < view.pieceViewStates.length; j++){
               view.pieceViewStates[j].selected = (j === i);
             }
 
-            this.selectedPiece = i;
+            this.selectPiece(i);
           }
 
           return;
@@ -288,14 +310,13 @@ class Control{
       }
     }
 
-    this.deselectAllPieces();
+    this.selectPiece(null);
   }
 
-  deselectAllPieces(){
-    for(let i = 0; i < view.pieceViewStates.length; i++){
-      view.pieceViewStates[i].selected = false;
-    }
-    this.selectedPiece = null;
+  selectPiece(pieceNum){
+    this.selectedPiece = pieceNum;
+
+    view.selectPiece(pieceNum);
   }
 
 
@@ -318,6 +339,7 @@ class Control{
   }
 }
 
+const util = new Util();
 const sim = new Sim();
 const view = new View();
 const control = new Control();
